@@ -7,6 +7,7 @@
 #include <QDebug>
 #include <QProcess>
 #include <QThread>
+#include <QTimer>
 #include <QRegularExpression>
 #include <QDBusConnection>
 #include <QDBusConnectionInterface>
@@ -197,10 +198,27 @@ bool MediaController::restartWirePlumber() {
 }
 
 void MediaController::activateA2dpProfile() {
-  if (connectedDeviceMacAddress.isEmpty() || m_deviceOutputName.isEmpty()) {
-    LOG_WARN("Connected device MAC address or output name is empty, cannot activate A2DP profile");
+  if (connectedDeviceMacAddress.isEmpty()) {
+    LOG_WARN("Connected device MAC address is empty, cannot activate A2DP profile");
     return;
   }
+
+  // The Bluetooth card can show up in PipeWire a moment after the device connects;
+  // retry a few times instead of giving up while the card is not there yet.
+  if (!ensureOutputName()) {
+    constexpr int maxRetries = 5;
+    if (m_a2dpActivationRetries < maxRetries) {
+      ++m_a2dpActivationRetries;
+      LOG_INFO("Bluetooth audio card not ready yet, retrying A2DP activation ("
+               << m_a2dpActivationRetries << "/" << maxRetries << ")");
+      QTimer::singleShot(1000, this, [this]() { activateA2dpProfile(); });
+    } else {
+      LOG_WARN("Bluetooth audio card never appeared, cannot activate A2DP profile");
+      m_a2dpActivationRetries = 0;
+    }
+    return;
+  }
+  m_a2dpActivationRetries = 0;
 
   if (!isA2dpProfileAvailable()) {
     LOG_WARN("A2DP profile not available, attempting to restart WirePlumber");
@@ -230,7 +248,7 @@ void MediaController::activateA2dpProfile() {
 }
 
 void MediaController::removeAudioOutputDevice() {
-  if (connectedDeviceMacAddress.isEmpty() || m_deviceOutputName.isEmpty()) {
+  if (connectedDeviceMacAddress.isEmpty() || !ensureOutputName()) {
     LOG_WARN("Connected device MAC address or output name is empty, cannot remove audio output device");
     return;
   }
@@ -245,7 +263,19 @@ void MediaController::setConnectedDeviceMacAddress(const QString &macAddress) {
   connectedDeviceMacAddress = macAddress;
   m_deviceOutputName = getAudioDeviceName();
   m_cachedA2dpProfile.clear();
+  m_a2dpActivationRetries = 0;
   LOG_INFO("Device output name set to: " << m_deviceOutputName);
+}
+
+// Resolves the card name again when it was looked up before the card existed.
+bool MediaController::ensureOutputName() {
+  if (m_deviceOutputName.isEmpty() && !connectedDeviceMacAddress.isEmpty()) {
+    m_deviceOutputName = getAudioDeviceName();
+    if (!m_deviceOutputName.isEmpty()) {
+      LOG_INFO("Device output name resolved: " << m_deviceOutputName);
+    }
+  }
+  return !m_deviceOutputName.isEmpty();
 }
 
 MediaController::MediaState MediaController::mediaStateFromPlayerctlOutput(
