@@ -55,6 +55,7 @@ Q_SIGNALS:
 private:
   MediaState mediaStateFromPlayerctlOutput(const QString &output) const;
   QString getAudioDeviceName();
+  bool ensureOutputName();
   QStringList getPlayingMediaPlayers();
 
   QStringList pausedByAppServices;
@@ -65,6 +66,7 @@ private:
   PlayerStatusWatcher *playerStatusWatcher = nullptr;
   PulseAudioController *m_pulseAudio = nullptr;
   QString m_cachedA2dpProfile;
+  int m_a2dpActivationRetries = 0;
 };
 
 #endif // MEDIACONTROLLER_H
