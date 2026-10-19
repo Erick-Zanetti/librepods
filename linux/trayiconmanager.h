@@ -21,6 +21,9 @@ public:
 
     void updateConversationalAwareness(bool enabled);
 
+    // Shows "Connect AirPods" only while they are not connected.
+    void setAirPodsConnected(bool connected);
+
     void showNotification(const QString &title, const QString &message);
 
     bool notificationsEnabled() const { return m_notificationsEnabled; }
@@ -48,6 +51,8 @@ private slots:
 private:
     QSystemTrayIcon *trayIcon;
     QMenu *trayMenu;
+    QAction *connectAction;
+    QAction *connectSeparator;
     QAction *caToggleAction;
     QActionGroup *noiseControlGroup;
     bool m_notificationsEnabled = true;
@@ -62,4 +67,5 @@ signals:
     void conversationalAwarenessToggled(bool enabled);
     void openApp();
     void openSettings();
+    void connectRequested();
 };

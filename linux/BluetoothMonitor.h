@@ -17,9 +17,15 @@ public:
 
     bool checkAlreadyConnectedDevices();
 
+    // Asks BlueZ to connect the first paired AirPods that are not connected yet,
+    // the same as connecting them from the system's Bluetooth settings.
+    // Returns false when there is no such device.
+    bool connectPairedAirPods();
+
 signals:
     void deviceConnected(const QString &macAddress, const QString &deviceName);
     void deviceDisconnected(const QString &macAddress, const QString &deviceName);
+    void connectFailed(const QString &deviceName, const QString &error);
 
 private slots:
     void onPropertiesChanged(const QString &interface, const QVariantMap &changedProps, const QStringList &invalidatedProps);

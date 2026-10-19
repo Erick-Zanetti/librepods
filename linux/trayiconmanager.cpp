@@ -54,8 +54,20 @@ void TrayIconManager::updateConversationalAwareness(bool enabled)
     caToggleAction->setChecked(enabled);
 }
 
+void TrayIconManager::setAirPodsConnected(bool connected)
+{
+    connectAction->setVisible(!connected);
+    connectSeparator->setVisible(!connected);
+}
+
 void TrayIconManager::setupMenuActions()
 {
+    // Connect action (hidden while the AirPods are connected)
+    connectAction = new QAction(tr("Connect AirPods"), trayMenu);
+    trayMenu->addAction(connectAction);
+    connect(connectAction, &QAction::triggered, this, [this](){emit connectRequested();});
+    connectSeparator = trayMenu->addSeparator();
+
     // Open action
     QAction *openAction = new QAction(tr("Open"), trayMenu);
     trayMenu->addAction(openAction);
