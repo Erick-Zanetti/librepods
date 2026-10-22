@@ -6,6 +6,7 @@
 #include <QMap>
 #include <QString>
 #include <QDateTime>
+#include <QTimer>
 #include "enums.h"
 
 class QTimer;
@@ -73,6 +74,10 @@ public:
     void startScan();
     void stopScan();
     bool isScanning() const;
+    // Scan in cycles instead of continuously: scan for onSeconds, pause for offSeconds.
+    // Continuous scanning keeps some adapters (Intel AX201) from completing connections
+    // to other devices, which then hang "in progress". 0 for either = continuous.
+    void setScanCycle(int onSeconds, int offSeconds);
 
 private slots:
     void onDeviceDiscovered(const QBluetoothDeviceInfo &info);
@@ -83,7 +88,13 @@ signals:
     void deviceFound(const BleInfo &device);
 
 private:
+    bool cycling() const;
+
     QBluetoothDeviceDiscoveryAgent *discoveryAgent;
+    QTimer *pauseTimer;
+    int scanOnMs = 0;
+    int scanOffMs = 0;
+    bool scanWanted = false;
 };
 
 #endif // BLEMANAGER_H

@@ -93,6 +93,13 @@ BleManager::BleManager(QObject *parent) : QObject(parent)
             this, &BleManager::onScanFinished);
     connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::errorOccurred,
             this, &BleManager::onErrorOccurred);
+
+    pauseTimer = new QTimer(this);
+    pauseTimer->setSingleShot(true);
+    connect(pauseTimer, &QTimer::timeout, this, [this]() {
+        if (scanWanted)
+            discoveryAgent->start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
+    });
 }
 
 BleManager::~BleManager()
@@ -100,21 +107,39 @@ BleManager::~BleManager()
     delete discoveryAgent;
 }
 
+void BleManager::setScanCycle(int onSeconds, int offSeconds)
+{
+    scanOnMs = qMax(0, onSeconds) * 1000;
+    scanOffMs = qMax(0, offSeconds) * 1000;
+    discoveryAgent->setLowEnergyDiscoveryTimeout(cycling() ? scanOnMs : 0);
+    if (cycling())
+        LOG_INFO("BLE scan in cycles:" << onSeconds << "s on," << offSeconds << "s off");
+}
+
+bool BleManager::cycling() const
+{
+    return scanOnMs > 0 && scanOffMs > 0;
+}
+
 void BleManager::startScan()
 {
     LOG_DEBUG("Starting BLE scan...");
+    scanWanted = true;
+    pauseTimer->stop();
     discoveryAgent->start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
 }
 
 void BleManager::stopScan()
 {
     LOG_DEBUG("Stopping BLE scan...");
+    scanWanted = false;
+    pauseTimer->stop();
     discoveryAgent->stop();
 }
 
 bool BleManager::isScanning() const
 {
-    return discoveryAgent->isActive();
+    return discoveryAgent->isActive() || pauseTimer->isActive();
 }
 
 void BleManager::onDeviceDiscovered(const QBluetoothDeviceInfo &info)
@@ -217,6 +242,13 @@ void BleManager::onDeviceDiscovered(const QBluetoothDeviceInfo &info)
 
 void BleManager::onScanFinished()
 {
+    // In cycles a scan ends after scanOnMs: pause, then scan again while still wanted.
+    if (cycling())
+    {
+        if (scanWanted)
+            pauseTimer->start(scanOffMs);
+        return;
+    }
     if (discoveryAgent->isActive())
     {
         discoveryAgent->start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);

@@ -95,6 +95,8 @@ public:
         // Load settings
         CrossDevice.isEnabled = loadCrossDeviceEnabled();
         m_takeOverOnMediaPlay = m_settings->value("media/takeOverOnPlay", true).toBool();
+        m_bleManager->setScanCycle(m_settings->value("ble/scanOnSeconds", 0).toInt(),
+                                   m_settings->value("ble/scanOffSeconds", 0).toInt());
         setEarDetectionBehavior(loadEarDetectionSettings());
         setRetryAttempts(loadRetryAttempts());
 
