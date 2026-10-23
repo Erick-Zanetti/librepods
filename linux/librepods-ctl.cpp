@@ -12,7 +12,8 @@ int main(int argc, char *argv[]) {
                             << "  noise:anc           Enable Active Noise Cancellation\n"
                             << "  noise:transparency  Enable Transparency mode\n"
                             << "  noise:adaptive      Enable Adaptive mode\n"
-                            << "  connect             Connect the paired AirPods\n";
+                            << "  connect             Connect the paired AirPods\n"
+                            << "  disconnect          Disconnect the AirPods\n";
         return 1;
     }
 

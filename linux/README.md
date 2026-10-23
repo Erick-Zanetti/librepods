@@ -171,6 +171,7 @@ librepods-ctl
 | `noise:transparency` | Enable Transparency mode |
 | `noise:adaptive` | Enable Adaptive mode |
 | `connect` | Connect the paired AirPods (also in the tray menu while they are disconnected) |
+| `disconnect` | Disconnect the AirPods (also in the tray menu while they are connected) |
 
 ### Example
 ```bash

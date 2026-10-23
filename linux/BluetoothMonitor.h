@@ -22,10 +22,15 @@ public:
     // Returns false when there is no such device.
     bool connectPairedAirPods();
 
+    // Asks BlueZ to disconnect the connected AirPods, the same as disconnecting them from
+    // the system's Bluetooth settings. Returns false when no AirPods are connected.
+    bool disconnectAirPods();
+
 signals:
     void deviceConnected(const QString &macAddress, const QString &deviceName);
     void deviceDisconnected(const QString &macAddress, const QString &deviceName);
     void connectFailed(const QString &deviceName, const QString &error);
+    void disconnectFailed(const QString &deviceName, const QString &error);
 
 private slots:
     void onPropertiesChanged(const QString &interface, const QVariantMap &changedProps, const QStringList &invalidatedProps);
