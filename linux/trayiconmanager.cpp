@@ -57,15 +57,19 @@ void TrayIconManager::updateConversationalAwareness(bool enabled)
 void TrayIconManager::setAirPodsConnected(bool connected)
 {
     connectAction->setVisible(!connected);
-    connectSeparator->setVisible(!connected);
+    disconnectAction->setVisible(connected);
 }
 
 void TrayIconManager::setupMenuActions()
 {
-    // Connect action (hidden while the AirPods are connected)
+    // Connect / Disconnect: only the one that applies is shown
     connectAction = new QAction(tr("Connect AirPods"), trayMenu);
     trayMenu->addAction(connectAction);
     connect(connectAction, &QAction::triggered, this, [this](){emit connectRequested();});
+    disconnectAction = new QAction(tr("Disconnect AirPods"), trayMenu);
+    disconnectAction->setVisible(false);
+    trayMenu->addAction(disconnectAction);
+    connect(disconnectAction, &QAction::triggered, this, [this](){emit disconnectRequested();});
     connectSeparator = trayMenu->addSeparator();
 
     // Open action

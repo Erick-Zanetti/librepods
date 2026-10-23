@@ -81,6 +81,9 @@ public:
         connect(monitor, &BluetoothMonitor::deviceConnected, this, &AirPodsTrayApp::bluezDeviceConnected);
         connect(monitor, &BluetoothMonitor::deviceDisconnected, this, &AirPodsTrayApp::bluezDeviceDisconnected);
         connect(trayManager, &TrayIconManager::connectRequested, this, &AirPodsTrayApp::connectPairedAirPods);
+        connect(trayManager, &TrayIconManager::disconnectRequested, this, &AirPodsTrayApp::disconnectAirPods);
+        connect(monitor, &BluetoothMonitor::disconnectFailed, this, [this](const QString &name, const QString &error)
+                { trayManager->showNotification(tr("Could not disconnect %1").arg(name), error); });
         connect(monitor, &BluetoothMonitor::connectFailed, this, [this](const QString &name, const QString &error)
                 { trayManager->showNotification(tr("Could not connect %1").arg(name), error); });
         connect(this, &AirPodsTrayApp::airPodsStatusChanged, this, [this]()
@@ -192,6 +195,13 @@ public slots:
         if (!monitor->connectPairedAirPods()) {
             trayManager->showNotification(tr("No AirPods to connect"),
                                           tr("Pair your AirPods in the system's Bluetooth settings first"));
+        }
+    }
+
+    // Disconnect the AirPods through BlueZ, as the system's Bluetooth settings do.
+    void disconnectAirPods() {
+        if (!monitor->disconnectAirPods()) {
+            LOG_INFO("AirPods are not connected");
         }
     }
 
@@ -1120,6 +1130,9 @@ int main(int argc, char *argv[]) {
             }
             else if (msg == "connect") {
                 trayApp->connectPairedAirPods();
+            }
+            else if (msg == "disconnect") {
+                trayApp->disconnectAirPods();
             }
             else
             {

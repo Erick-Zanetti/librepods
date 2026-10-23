@@ -21,7 +21,7 @@ public:
 
     void updateConversationalAwareness(bool enabled);
 
-    // Shows "Connect AirPods" only while they are not connected.
+    // Shows "Connect AirPods" while they are not connected, "Disconnect AirPods" while they are.
     void setAirPodsConnected(bool connected);
 
     void showNotification(const QString &title, const QString &message);
@@ -52,6 +52,7 @@ private:
     QSystemTrayIcon *trayIcon;
     QMenu *trayMenu;
     QAction *connectAction;
+    QAction *disconnectAction;
     QAction *connectSeparator;
     QAction *caToggleAction;
     QActionGroup *noiseControlGroup;
@@ -68,4 +69,5 @@ signals:
     void openApp();
     void openSettings();
     void connectRequested();
+    void disconnectRequested();
 };
