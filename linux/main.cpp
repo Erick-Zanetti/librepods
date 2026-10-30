@@ -668,6 +668,7 @@ private slots:
             QByteArray data = localSocket->readAll();
             QMetaObject::invokeMethod(this, "parseData", Qt::QueuedConnection, Q_ARG(QByteArray, data));
             QMetaObject::invokeMethod(this, "relayPacketToPhone", Qt::QueuedConnection, Q_ARG(QByteArray, data)); });
+            m_connectAttempt = 0;
             sendHandshake();
         };
 
@@ -676,18 +677,23 @@ private slots:
         {
             LOG_ERROR("Socket error: " << error << ", " << localSocket->errorString());
 
-            static int retryCount = 0;
-            if (retryCount < m_retryAttempts)
+            // Right after the AirPods connect, their L2CAP service often isn't up yet
+            // ("Cannot connect to remote profile") for several seconds: keep trying with a
+            // growing delay instead of giving up after a few quick attempts.
+            const int attempts = qMax(m_retryAttempts, kMinConnectAttempts);
+            if (m_connectAttempt < attempts)
             {
-                retryCount++;
-                LOG_INFO("Retrying connection (attempt " << retryCount << ")");
-                QTimer::singleShot(1500, this, [this, device]()
+                m_connectAttempt++;
+                const int delay = qMin(1500 << (m_connectAttempt - 1), kMaxRetryDelayMs);
+                LOG_INFO("Retrying connection (attempt " << m_connectAttempt << " of " << attempts
+                         << ", in " << delay << " ms)");
+                QTimer::singleShot(delay, this, [this, device]()
                                    { connectToDevice(device); });
             }
             else
             {
-                LOG_ERROR("Failed to connect after 3 attempts");
-                retryCount = 0;
+                LOG_ERROR("Failed to connect after " << attempts << " attempts");
+                m_connectAttempt = 0;
             }
         };
 
@@ -1027,6 +1033,9 @@ private:
     QSettings *m_settings;
     AutoStartManager *m_autoStartManager;
     int m_retryAttempts = 3;
+    int m_connectAttempt = 0; // retries of the current connection, reset once it connects
+    static constexpr int kMinConnectAttempts = 8;    // about 80 s with the delays below
+    static constexpr int kMaxRetryDelayMs = 15000;
     bool m_hideOnStart = false;
     bool m_takeOverOnMediaPlay = true;
     DeviceInfo *m_deviceInfo;
