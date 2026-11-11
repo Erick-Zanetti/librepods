@@ -728,9 +728,8 @@ private slots:
         else if (data.startsWith(AirPodsPackets::MagicPairing::MAGIC_CLOUD_KEYS_HEADER))
         {
             auto keys = AirPodsPackets::MagicPairing::parseMagicCloudKeysPacket(data);
-            LOG_INFO("Received Magic Cloud Keys:");
-            LOG_INFO("MagicAccIRK: " << keys.magicAccIRK.toHex());
-            LOG_INFO("MagicAccEncKey: " << keys.magicAccEncKey.toHex());
+            // The keys themselves stay out of the log: they pair the AirPods, and the journal is kept for weeks.
+            LOG_INFO("Received Magic Cloud Keys");
 
             // Store the keys
             m_deviceInfo->setMagicAccIRK(keys.magicAccIRK);
