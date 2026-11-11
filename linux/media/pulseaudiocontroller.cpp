@@ -288,6 +288,14 @@ bool PulseAudioController::waitForOperation(pa_operation *op)
 {
     if (!op) return false;
 
+    // Wake up on every state change, not only when a callback signals. The info callbacks signal on
+    // success but not when the server answers with an error (eol < 0, e.g. a card that doesn't exist
+    // yet), so the operation finished while this loop kept waiting and the whole app hung. The lock
+    // is held, so the operation cannot finish before the callback is set.
+    pa_operation_set_state_callback(op, [](pa_operation *, void *mainloop) {
+        pa_threaded_mainloop_signal(static_cast<pa_threaded_mainloop *>(mainloop), 0);
+    }, m_mainloop);
+
     while (pa_operation_get_state(op) == PA_OPERATION_RUNNING)
     {
         pa_threaded_mainloop_wait(m_mainloop);
